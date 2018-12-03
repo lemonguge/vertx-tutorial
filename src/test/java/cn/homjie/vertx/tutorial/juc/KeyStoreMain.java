@@ -2,6 +2,10 @@ package cn.homjie.vertx.tutorial.juc;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -14,6 +18,9 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.DSAPrivateKeySpec;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -27,12 +34,46 @@ import javax.crypto.spec.DESKeySpec;
 public class KeyStoreMain {
 
     public static void main(String[] args) throws Exception {
-        secretKeyStore();
+        //secretKeyStore();
         //pairKeyStore();
         //certificateKeyStore();
 
         //generateKeyPair();
         //generateKey();
+
+        keyPairSave();
+    }
+
+    private static void keyPairSave() throws Exception {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+        kpg.initialize(2048);
+        KeyPair kp = kpg.generateKeyPair();
+        Key pvt = kp.getPrivate();
+        Key pub = kp.getPublic();
+
+        // Private key format: PKCS#8, Public key format: X.509
+        System.out.println("Private key format: " + pvt.getFormat() + ", Public key format: " + pub.getFormat());
+
+        Base64.Encoder encoder = Base64.getEncoder();
+        try (FileWriter out = new FileWriter("mqtt.key")) {
+            out.write(encoder.encodeToString(pvt.getEncoded()));
+        }
+        try (FileWriter out = new FileWriter("mqtt.pub")) {
+            out.write(encoder.encodeToString(pub.getEncoded()));
+        }
+
+        Base64.Decoder decoder = Base64.getDecoder();
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+
+        Path path = Paths.get("mqtt.key");
+        byte[] bytes = decoder.decode(Files.readAllLines(path).get(0));
+        PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(bytes);
+        System.out.println(kf.generatePrivate(pkcs8EncodedKeySpec).equals(pvt));
+
+        path = Paths.get("mqtt.pub");
+        bytes = decoder.decode(Files.readAllLines(path).get(0));
+        X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(bytes);
+        System.out.println(kf.generatePublic(x509EncodedKeySpec).equals(pub));
     }
 
     private static void secretKeyStore() throws Exception {
@@ -126,7 +167,7 @@ public class KeyStoreMain {
         System.out.println(cert);
     }
 
-    public static void generateKeyPair() throws NoSuchAlgorithmException, InvalidKeySpecException {
+    private static void generateKeyPair() throws NoSuchAlgorithmException, InvalidKeySpecException {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
         kpg.initialize(512);
         KeyPair kp = kpg.generateKeyPair();
@@ -140,7 +181,7 @@ public class KeyStoreMain {
         System.out.println("\tDSA param X:" + dsaPKS.getX());
     }
 
-    public static void generateKey() throws NoSuchAlgorithmException, InvalidKeySpecException {
+    private static void generateKey() throws NoSuchAlgorithmException, InvalidKeySpecException {
         KeyGenerator kg = KeyGenerator.getInstance("DES");
         SecretKey key = kg.generateKey();
         System.out.println(kg.getProvider());
