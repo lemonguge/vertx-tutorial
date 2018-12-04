@@ -120,8 +120,10 @@ public class KeyStoreMain {
         KeyPair kp = kpg.generateKeyPair();
         PrivateKey privateKey = kp.getPrivate();
         /*
-            Generate CA private key
+            # Generate CA private key format PKCS1
             openssl genrsa -out mqtt.key 2048
+            # private key convert PKCS8
+            openssl pkcs8 -topk8 -inform pem -in mqtt.key -outform pem -nocrypt -out mqtt.pem
             # Generate CSR
             openssl req -new -key mqtt.key -out mqtt.csr
             # Generate Self Signed certificate（CA 根证书）
