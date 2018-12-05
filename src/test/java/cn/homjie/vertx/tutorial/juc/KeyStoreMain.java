@@ -120,6 +120,26 @@ public class KeyStoreMain {
         KeyPair kp = kpg.generateKeyPair();
         PrivateKey privateKey = kp.getPrivate();
         /*
+            # See https://mosquitto.org/man/mosquitto-tls-7.html
+            # Generate a certificate authority certificate and key.
+            openssl req -new -x509 -days 365 -extensions v3_ca -keyout ca.key -out ca.crt
+            
+            # Generate a server key.
+            openssl genrsa -des3 -out server.key 2048
+            # Generate a server key without encryption.
+            openssl genrsa -out server.key 2048
+            # Generate a certificate signing request to send to the CA.
+            openssl req -out server.csr -key server.key -new
+            # Send the CSR to the CA, or sign it with your CA key:
+            openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 365
+            
+            # Generate a client key.
+            openssl genrsa -des3 -out client.key 2048
+            # Generate a certificate signing request to send to the CA.
+            openssl req -out client.csr -key client.key -new
+            # Send the CSR to the CA, or sign it with your CA key:
+            # openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.crt -days <duration>
+            ------
             # Generate CA private key format PKCS1
             openssl genrsa -out mqtt.key 2048
             # private key convert PKCS8
