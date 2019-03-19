@@ -148,6 +148,13 @@ public class KeyStoreMain {
             openssl req -new -key mqtt.key -out mqtt.csr
             # Generate Self Signed certificate（CA 根证书）
             openssl x509 -req -days 365 -in mqtt.csr -signkey mqtt.key -out mqtt.crt
+            ------
+            # PKCS#12，由X.509证书和对应的私钥组成
+            openssl pkcs12 -export -in mqtt.crt -inkey mqtt.key -out mqtt.p12
+            # 将p12文件转换为jks
+            keytool -importkeystore -srckeystore mqtt.p12 -srcstoretype pkcs12 -destkeystore mqtt.jks
+            # 将证书转换为jks
+            keytool -import -trustcacerts -file ca.crt -keystore truststore.jks
          */
         CertificateFactory cf = CertificateFactory.getInstance("X509");
         Certificate certificate = cf.generateCertificate(new FileInputStream("mqtt.crt"));
